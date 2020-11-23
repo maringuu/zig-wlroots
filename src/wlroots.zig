@@ -120,3 +120,24 @@ pub const matrix = @import("types/matrix.zig");
 
 pub const Edges = @import("util/edges.zig").Edges;
 pub const log = @import("util/log.zig");
+
+fn refAllDeclsRecursive(comptime T: type) void {
+    @import("std").debug.print("{}\n", .{@typeName(T)});
+    const decls = switch (@typeInfo(T)) {
+        .Struct => |info| info.decls,
+        .Union => |info| info.decls,
+        .Enum => |info| info.decls,
+        .Opaque => |info| info.decls,
+        else => return,
+    };
+    inline for (decls) |decl| {
+        switch (decl.data) {
+            .Type => |T2| refAllDeclsRecursive(T2),
+            else => _ = decl,
+        }
+    }
+}
+
+test "" {
+    refAllDeclsRecursive(@This());
+}
